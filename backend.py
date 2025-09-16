@@ -17,6 +17,11 @@ app.add_middleware(
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+from fastapi.responses import HTMLResponse
+
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    return "<h1>KIZHI YT DOWNLOADER is running!</h1><p>Use /formats and /download endpoints.</p>"
 
 @app.get("/formats")
 async def get_formats(url: str, mode: str):
