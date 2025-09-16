@@ -18,6 +18,11 @@ app.add_middleware(
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
+@app.get("/")
+async def root():
+    # Ensure index.html is in the same folder as backend.py
+    return FileResponse(os.path.join(os.path.dirname(__file__), "index.html"))
+
 # Serve frontend if needed
 @app.get("/")
 async def root():
