@@ -9,10 +9,10 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # <- Allows GitHub Pages frontend
+    allow_origins=["https://vetrivel-offl.github.io"],  # Allow your GitHub Pages domain
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
 )
 
 DOWNLOAD_DIR = "downloads"
