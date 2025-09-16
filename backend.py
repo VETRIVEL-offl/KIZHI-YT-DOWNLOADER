@@ -6,7 +6,7 @@ import os
 
 app = FastAPI()
 
-# Enable CORS for GitHub Pages or any frontend
+# Enable CORS so frontend can access from GitHub Pages
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,16 +15,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Directory for downloaded files
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-# Serve frontend HTML at root
-@app.get("/")
-def index():
-    return FileResponse("index.html")  # Make sure index.html is in the same folder
-
-# Get available formats
 @app.get("/formats")
 async def get_formats(url: str, mode: str):
     ydl_opts = {"quiet": True, "skip_download": True}
@@ -41,7 +34,6 @@ async def get_formats(url: str, mode: str):
         return JSONResponse(status_code=400, content={"error": str(e)})
     return formats
 
-# Download video/audio
 @app.post("/download")
 async def download(request: Request):
     data = await request.json()
@@ -60,8 +52,11 @@ async def download(request: Request):
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+            info = ydl.extract_info(url)
+            filename = ydl.prepare_filename(info)
+            if mode == "mp3":
+                filename = os.path.splitext(filename)[0] + ".mp3"
     except Exception as e:
         return JSONResponse(status_code=400, content={"status": f"Error: {e}"})
 
-    return {"status": "Download completed!"}
+    return {"status": "Download completed!", "file": filename}
