@@ -104,6 +104,9 @@
   </div>
 
   <script>
+    // Use your Render backend URL here
+    const backend_url = "https://kizhi-yt-downloader.onrender.com";
+
     async function fetchFormats() {
       const url = document.getElementById("url").value;
       const mode = document.getElementById("mode").value;
@@ -115,7 +118,7 @@
       document.getElementById("status").innerText = "⚡ Loading available formats...";
 
       try {
-        const res = await fetch(`http://127.0.0.1:8000/formats?url=${encodeURIComponent(url)}&mode=${mode}`);
+        const res = await fetch(`${backend_url}/formats?url=${encodeURIComponent(url)}&mode=${mode}`);
         const data = await res.json();
 
         if (data.length === 0) {
@@ -145,14 +148,18 @@
 
       document.getElementById("status").innerText = "⬇️ Downloading... Please wait.";
 
-      const res = await fetch("http://127.0.0.1:8000/download", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, mode, format_id })
-      });
+      try {
+        const res = await fetch(`${backend_url}/download`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, mode, format_id })
+        });
 
-      const data = await res.json();
-      document.getElementById("status").innerText = "🎉 " + data.status;
+        const data = await res.json();
+        document.getElementById("status").innerText = "🎉 " + data.status;
+      } catch (err) {
+        document.getElementById("status").innerText = "⚠️ Error downloading.";
+      }
     }
   </script>
 </body>
