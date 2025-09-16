@@ -102,65 +102,65 @@
     <p id="status"></p>
     <footer>🔥 DEVELOPED BY VETRIVEL M 🔥</footer>
   </div>
+<script>
+const BACKEND_URL = "https://kizhi-yt-downloader.onrender.com"; // Replace with your Render URL
 
-  <script>
-    // Use your Render backend URL here
-    const backend_url = "https://kizhi-yt-downloader.onrender.com";
+async function fetchFormats() {
+  const url = document.getElementById("url").value;
+  const mode = document.getElementById("mode").value;
+  const qualitySelect = document.getElementById("quality");
+  qualitySelect.innerHTML = "";
 
-    async function fetchFormats() {
-      const url = document.getElementById("url").value;
-      const mode = document.getElementById("mode").value;
-      const qualitySelect = document.getElementById("quality");
-      qualitySelect.innerHTML = "";
+  if (!url || !mode) return;
 
-      if (!url || !mode) return;
+  document.getElementById("status").innerText = "⚡ Loading available formats...";
 
-      document.getElementById("status").innerText = "⚡ Loading available formats...";
+  try {
+    const res = await fetch(`${BACKEND_URL}/formats?url=${encodeURIComponent(url)}&mode=${mode}`);
+    const data = await res.json();
 
-      try {
-        const res = await fetch(`${backend_url}/formats?url=${encodeURIComponent(url)}&mode=${mode}`);
-        const data = await res.json();
-
-        if (data.length === 0) {
-          document.getElementById("status").innerText = "❌ No formats available.";
-          return;
-        }
-
-        data.forEach(f => {
-          const option = document.createElement("option");
-          option.value = f.format_id;
-          option.text = f.label;
-          qualitySelect.add(option);
-        });
-
-        document.getElementById("status").innerText = "✅ Choose a quality to download instantly.";
-      } catch (err) {
-        document.getElementById("status").innerText = "⚠️ Error fetching formats.";
-      }
+    if (data.length === 0) {
+      document.getElementById("status").innerText = "❌ No formats available.";
+      return;
     }
 
-    async function download() {
-      const url = document.getElementById("url").value;
-      const mode = document.getElementById("mode").value;
-      const format_id = document.getElementById("quality").value;
+    data.forEach(f => {
+      const option = document.createElement("option");
+      option.value = f.format_id;
+      option.text = f.label;
+      qualitySelect.add(option);
+    });
 
-      if (!url || !mode || !format_id) return;
+    document.getElementById("status").innerText = "✅ Choose a quality to download instantly.";
+  } catch (err) {
+    document.getElementById("status").innerText = "⚠️ Error fetching formats.";
+  }
+}
 
-      document.getElementById("status").innerText = "⬇️ Downloading... Please wait.";
+async function download() {
+  const url = document.getElementById("url").value;
+  const mode = document.getElementById("mode").value;
+  const format_id = document.getElementById("quality").value;
 
-      try {
-        const res = await fetch(`${backend_url}/download`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, mode, format_id })
-        });
+  if (!url || !mode || !format_id) return;
 
-        const data = await res.json();
-        document.getElementById("status").innerText = "🎉 " + data.status;
-      } catch (err) {
-        document.getElementById("status").innerText = "⚠️ Error downloading.";
-      }
-    }
-  </script>
+  document.getElementById("status").innerText = "⬇️ Downloading... Please wait.";
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/download`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, mode, format_id })
+    });
+
+    const data = await res.json();
+    document.getElementById("status").innerText = "🎉 " + data.status;
+  } catch (err) {
+    document.getElementById("status").innerText = "⚠️ Download failed.";
+  }
+}
+</script>
+
+ 
 </body>
 </html>
