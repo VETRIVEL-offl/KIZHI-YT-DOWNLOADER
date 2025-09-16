@@ -1,15 +1,15 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse
 import yt_dlp
 import os
 
 app = FastAPI()
 
-# Allow requests from GitHub Pages and localhost
+# Enable CORS for GitHub Pages
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can also set ["https://vetrivel-offl.github.io"]
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -17,16 +17,6 @@ app.add_middleware(
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-
-@app.get("/")
-async def root():
-    # Ensure index.html is in the same folder as backend.py
-    return FileResponse(os.path.join(os.path.dirname(__file__), "index.html"))
-
-# Serve frontend if needed
-@app.get("/")
-async def root():
-    return FileResponse("index.html")
 
 @app.get("/formats")
 async def get_formats(url: str, mode: str):
