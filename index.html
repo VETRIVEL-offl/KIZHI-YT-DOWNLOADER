@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KIZHI YT DOWNLOADER</title>
+  <style>
+    /* Background animation (YouTube-red glow waves) */
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(-45deg, #000000, #1a1a1a, #ff0000, #1a1a1a);
+      background-size: 400% 400%;
+      animation: gradientBG 12s ease infinite;
+      color: white;
+      text-align: center;
+    }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      max-width: 650px;
+      margin: 60px auto;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 40px;
+      border-radius: 18px;
+      box-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #ff3333;
+    }
+
+    img {
+      width: 140px;
+      margin-bottom: 15px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      outline: none;
+    }
+
+    select {
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #00ffcc;
+    }
+
+    footer {
+      margin-top: 30px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: #ff0000;
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 10px rgba(255,0,0,0.7); }
+      50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(255,0,0,1); }
+      100% { transform: scale(1); box-shadow: 0 0 10px rgba(255,0,0,0.7); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg" alt="YouTube Logo">
+    <h1>KIZHI YT DOWNLOADER</h1>
+
+    <input type="text" id="url" placeholder="🎥 Enter YouTube Video / Shorts / Playlist URL">
+
+    <select id="mode" onchange="fetchFormats()">
+      <option value="">-- Select Mode --</option>
+      <option value="mp4">Download as MP4</option>
+      <option value="mp3">Download as MP3</option>
+    </select>
+
+    <select id="quality" onchange="download()"></select>
+
+    <p id="status"></p>
+    <footer>🔥 DEVELOPED BY VETRIVEL M 🔥</footer>
+  </div>
+
+  <script>
+    async function fetchFormats() {
+      const url = document.getElementById("url").value;
+      const mode = document.getElementById("mode").value;
+      const qualitySelect = document.getElementById("quality");
+      qualitySelect.innerHTML = "";
+
+      if (!url || !mode) return;
+
+      document.getElementById("status").innerText = "⚡ Loading available formats...";
+
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/formats?url=${encodeURIComponent(url)}&mode=${mode}`);
+        const data = await res.json();
+
+        if (data.length === 0) {
+          document.getElementById("status").innerText = "❌ No formats available.";
+          return;
+        }
+
+        data.forEach(f => {
+          const option = document.createElement("option");
+          option.value = f.format_id;
+          option.text = f.label;
+          qualitySelect.add(option);
+        });
+
+        document.getElementById("status").innerText = "✅ Choose a quality to download instantly.";
+      } catch (err) {
+        document.getElementById("status").innerText = "⚠️ Error fetching formats.";
+      }
+    }
+
+    async function download() {
+      const url = document.getElementById("url").value;
+      const mode = document.getElementById("mode").value;
+      const format_id = document.getElementById("quality").value;
+
+      if (!url || !mode || !format_id) return;
+
+      document.getElementById("status").innerText = "⬇️ Downloading... Please wait.";
+
+      const res = await fetch("http://127.0.0.1:8000/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, mode, format_id })
+      });
+
+      const data = await res.json();
+      document.getElementById("status").innerText = "🎉 " + data.status;
+    }
+  </script>
+</body>
+</html>
