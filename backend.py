@@ -1,12 +1,12 @@
-# backend/backend.py
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi.responses import JSONResponse
 import yt_dlp
+import os
 
 app = FastAPI()
 
-# Allow requests from GitHub Pages or anywhere
+# Enable CORS so your frontend (GitHub Pages) can access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,42 +15,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class DownloadRequest(BaseModel):
-    url: str
-    mode: str
-    format_id: str
+DOWNLOAD_DIR = "downloads"
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 @app.get("/formats")
-def get_formats(url: str, mode: str):
+async def get_formats(url: str, mode: str):
+    ydl_opts = {"quiet": True, "skip_download": True}
+    formats = []
     try:
-        ydl_opts = {"quiet": True, "format": "bestvideo+bestaudio/best"} if mode == "mp4" else {"quiet": True, "format": "bestaudio/best"}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            formats = []
             for f in info.get("formats", []):
-                if mode == "mp3" and f.get("acodec") != "none":
-                    formats.append({"format_id": f["format_id"], "label": f"{f.get('abr', '128')} kbps"})
+                if mode == "mp3" and "audio" in f.get("acodec", ""):
+                    formats.append({"format_id": f["format_id"], "label": f.get("format_note", f.get("ext"))})
                 elif mode == "mp4" and f.get("vcodec") != "none":
-                    label = f'{f.get("height", "best")}p {f.get("fps", "")}fps'
-                    formats.append({"format_id": f["format_id"], "label": label})
-            return formats
+                    formats.append({"format_id": f["format_id"], "label": f.get("format_note", f.get("ext"))})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(status_code=400, content={"error": str(e)})
+    return formats
 
 @app.post("/download")
-def download(req: DownloadRequest):
+async def download(request: Request):
+    data = await request.json()
+    url = data.get("url")
+    format_id = data.get("format_id")
+    mode = data.get("mode")
+
+    if not url or not format_id or not mode:
+        return JSONResponse(status_code=400, content={"status": "Missing parameters"})
+
+    output_template = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
+    ydl_opts = {"format": format_id, "outtmpl": output_template, "quiet": True}
+
+    if mode == "mp3":
+        ydl_opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}]
+
     try:
-        ydl_opts = {
-            "format": req.format_id,
-            "outtmpl": "%(title)s.%(ext)s",
-        }
-        if req.mode == "mp3":
-            ydl_opts.update({
-                "format": req.format_id,
-                "postprocessors": [{"key": "FFmpegExtractAudio","preferredcodec": "mp3","preferredquality": "192"}]
-            })
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([req.url])
-        return {"status": "Download completed!"}
+            ydl.download([url])
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(status_code=400, content={"status": f"Error: {e}"})
+
+    return {"status": "Download completed!"}
