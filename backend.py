@@ -1,12 +1,13 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 import yt_dlp
 import os
 
 app = FastAPI()
 
-# Enable CORS so frontend can access from GitHub Pages
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,14 +16,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Directory for downloads
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-from fastapi.responses import HTMLResponse
 
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    return "<h1>KIZHI YT DOWNLOADER is running!</h1><p>Use /formats and /download endpoints.</p>"
+# Serve the frontend
+app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
+# Endpoint to get formats
 @app.get("/formats")
 async def get_formats(url: str, mode: str):
     ydl_opts = {"quiet": True, "skip_download": True}
@@ -39,6 +40,7 @@ async def get_formats(url: str, mode: str):
         return JSONResponse(status_code=400, content={"error": str(e)})
     return formats
 
+# Endpoint to download
 @app.post("/download")
 async def download(request: Request):
     data = await request.json()
@@ -57,11 +59,8 @@ async def download(request: Request):
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url)
-            filename = ydl.prepare_filename(info)
-            if mode == "mp3":
-                filename = os.path.splitext(filename)[0] + ".mp3"
+            ydl.download([url])
     except Exception as e:
         return JSONResponse(status_code=400, content={"status": f"Error: {e}"})
 
-    return {"status": "Download completed!", "file": filename}
+    return {"status": "Download completed!"}
