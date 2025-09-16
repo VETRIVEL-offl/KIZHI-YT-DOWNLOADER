@@ -4,7 +4,6 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import yt_dlp
 import os
-
 app = FastAPI()
 
 # Enable CORS
