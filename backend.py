@@ -1,28 +1,23 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 import yt_dlp
 import os
+
 app = FastAPI()
 
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # <- Allows GitHub Pages frontend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Directory for downloads
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-# Serve the frontend
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
-
-# Endpoint to get formats
 @app.get("/formats")
 async def get_formats(url: str, mode: str):
     ydl_opts = {"quiet": True, "skip_download": True}
@@ -39,7 +34,6 @@ async def get_formats(url: str, mode: str):
         return JSONResponse(status_code=400, content={"error": str(e)})
     return formats
 
-# Endpoint to download
 @app.post("/download")
 async def download(request: Request):
     data = await request.json()
